@@ -42,5 +42,5 @@ type UpdateRequest struct {
 	ConfirmPassword *string `json:"confirmPassword,omitempty"`
 	Email           string  `json:"email" validate:"required,email"`
 	PhoneNumber     string  `json:"phoneNumber" validate:"required"`
-	role_id         uint
+	RoleID          uint
 }

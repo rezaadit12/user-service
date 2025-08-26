@@ -17,7 +17,6 @@ func RunRoleSeeder(db *gorm.DB) {
 			Code: "CUSTOMER",
 			Name: "Customer",
 		},
-		{},
 	}
 
 	for _, role := range roles {
