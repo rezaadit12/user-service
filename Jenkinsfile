@@ -118,33 +118,23 @@ pipeline {
             }
         }
         }
-
         stage('Deploy to Remote Server') {
         steps {
             script {
-            def targetDir = "/home/reza/mini-soccer-project/user-service"
-            def sshCommandToServer = """
-            ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${USERNAME}@${HOST} '
-                if [ -d "${targetDir}/.git" ]; then
-                    echo "Directory exists. Pulling latest changes."
+            withCredentials([string(credentialsId: 'consul-http-url', variable: 'CONSUL_HTTP_URL'),
+                            string(credentialsId: 'consul-http-token', variable: 'CONSUL_HTTP_TOKEN')]) {
+                def targetDir = "/home/reza/mini-soccer-project/user-service"
+                sh """
+                ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${USERNAME}@${HOST} '
+                    cd "${targetDir}" || git clone -b "${TARGET_BRANCH}" git@github.com:rezaadit12/user-service.git "${targetDir}"
                     cd "${targetDir}"
-                    git pull origin "${TARGET_BRANCH}"
-                else
-                    echo "Directory does not exist. Cloning repository."
-                    git clone -b "${TARGET_BRANCH}" git@github.com:rezaadit12/user-service.git "${targetDir}"
-                    cd "${targetDir}"
-                fi
-
-                cp .env.example .env
-                sed -i "s/^TIMEZONE=.*/TIMEZONE=Asia\\/Jakarta/" "${targetDir}/.env"
-                sed -i "s/^CONSUL_HTTP_URL=.*/CONSUL_HTTP_URL=${CONSUL_HTTP_URL}/" "${targetDir}/.env"
-                sed -i "s/^CONSUL_HTTP_PATH=.*/CONSUL_HTTP_PATH=backend\\/user-service/" "${targetDir}/.env"
-                sed -i "s/^CONSUL_HTTP_TOKEN=.*/CONSUL_HTTP_TOKEN=${CONSUL_HTTP_TOKEN}/" "${targetDir}/.env"
-                sed -i "s/^CONSUL_WATCH_INTERVAL_SECONDS=.*/CONSUL_WATCH_INTERVAL_SECONDS=${CONSUL_WATCH_INTERVAL_SECONDS}/" "${targetDir}/.env"
-                sudo docker compose up -d --build --force-recreate
-            '
-            """
-            sh sshCommandToServer
+                    cp .env.example .env
+                    sed -i "s|^CONSUL_HTTP_URL=.*|CONSUL_HTTP_URL=${CONSUL_HTTP_URL}|" .env
+                    sed -i "s|^CONSUL_HTTP_TOKEN=.*|CONSUL_HTTP_TOKEN=${CONSUL_HTTP_TOKEN}|" .env
+                    sudo docker compose up -d --build --force-recreate
+                '
+                """
+            }
             }
         }
         }
